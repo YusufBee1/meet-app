@@ -1,70 +1,43 @@
-# Getting Started with Create React App
+# Meet App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Meet is a serverless, progressive web app (PWA) built using React. It allows users to search for upcoming events by city and view event details, supporting both desktop and mobile use cases.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## User Stories
 
-### `npm start`
+### Feature 2: Filter events by city
+**As a user**,  
+**I should be able to** search for events in a specific city  
+**So that** I can see relevant events near me
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Feature 3: Show/hide event details
+**As a user**,  
+**I should be able to** expand or collapse event details  
+**So that** I can see more information without leaving the page
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Feature 4: Specify number of events
+**As a user**,  
+**I should be able to** choose how many events are displayed  
+**So that** I’m not overwhelmed by too much data
 
-### `npm test`
+### Feature 5: Use the app offline
+**As a user**,  
+**I should be able to** access previously loaded events offline  
+**So that** I can still view them without an internet connection
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Feature 6: Visualize events data
+**As a user**,  
+**I should be able to** see a chart of event distribution  
+**So that** I understand the density of events by city or topic
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Gherkin Scenarios
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Feature 2: Filter events by city
+```gherkin
+Scenario: Filter events by city
+  Given the user has opened the main page
+  When the user types a city name in the search field
+  Then only events in that city should be shown
