@@ -6,7 +6,7 @@ const NumberOfEvents = ({ eventCount, setEventCount }) => {
       <input
         id="number-of-events"
         type="number"
-        role="textbox"
+        role="spinbutton"
         value={eventCount}
         onChange={(e) => setEventCount(Number(e.target.value))}
       />

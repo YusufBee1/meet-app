@@ -3,15 +3,14 @@ import React, { useState } from 'react';
 const Event = ({ event }) => {
   const [showDetails, setShowDetails] = useState(false);
 
-  const handleToggle = () => setShowDetails((prev) => !prev);
+  const toggleDetails = () => setShowDetails(prev => !prev);
 
   return (
-    <div className="event">
+    <li className="event">
       <h2>{event.summary}</h2>
-      <p>{event.created}</p>
       <p>{event.location}</p>
 
-      <button onClick={handleToggle}>
+      <button onClick={toggleDetails}>
         {showDetails ? 'Hide Details' : 'Show Details'}
       </button>
 
@@ -20,7 +19,7 @@ const Event = ({ event }) => {
           <p>{event.description}</p>
         </div>
       )}
-    </div>
+    </li>
   );
 };
 

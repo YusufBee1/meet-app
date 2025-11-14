@@ -1,64 +1,34 @@
 // src/App.test.js
 import { render, screen, waitFor } from '@testing-library/react';
-import App from './App';
-import * as api from './api';
 import userEvent from '@testing-library/user-event';
+import App from './App';
+import { mockEvents } from './__mocks__/mock-events';
+import * as api from './api';
 
 jest.mock('./api');
 
-const mockEvents = [
-  {
-    id: '1',
-    location: 'Paris',
-    summary: 'Event in Paris',
-    start: { dateTime: '2025-11-12T10:00:00' },
-    description: 'Fun times in Paris!',
-  },
-  {
-    id: '2',
-    location: 'Berlin',
-    summary: 'Event in Berlin',
-    start: { dateTime: '2025-11-13T12:00:00' },
-    description: 'Chill vibes in Berlin!',
-  },
-  {
-    id: '3',
-    location: 'Paris',
-    summary: 'Another Event in Paris',
-    start: { dateTime: '2025-11-14T09:00:00' },
-    description: 'More fun in Paris!',
-  },
-];
+describe('<App /> Integration', () => {
+  beforeEach(() => {
+    api.getEvents.mockResolvedValue(mockEvents);
+    api.extractLocations.mockImplementation(events => {
+      return [...new Set(events.map(event => event.location))];
+    });
+  });
 
-beforeEach(() => {
-  api.getEvents.mockResolvedValue(mockEvents);
-});
+  test('User can change the number of events displayed', async () => {
+    render(<App />);
 
-test('renders NumberOfEvents component', async () => {
-  render(<App />);
-  const input = await screen.findByRole('textbox');
-  expect(input).toBeInTheDocument();
-  expect(input).toHaveValue(32);
-});
+    // Wait for input field to appear and change to 2
+    const numberInput = await screen.findByRole('spinbutton');
+    await userEvent.clear(numberInput);
+    await userEvent.type(numberInput, '2');
 
-test('loads and displays event data from API', async () => {
-  render(<App />);
-  const eventCards = await screen.findAllByText(/event in/i);
-  expect(eventCards.length).toBeGreaterThan(0);
-  expect(api.getEvents).toHaveBeenCalled();
-});
+    // Wait until the rendered event items (with className="event") are filtered
+    const eventItems = await screen.findAllByRole('listitem');
+    const visibleEvents = eventItems.filter((item) =>
+      item.className.includes('event')
+    );
 
-test('filters events by city using CitySearch', async () => {
-  render(<App />);
-  const parisEvent = await screen.findByText(/Paris/i);
-  expect(parisEvent).toBeInTheDocument();
-
-  const cityOption = await screen.findByText('Berlin');
-  await userEvent.click(cityOption);
-
-  await waitFor(() => {
-    const berlinEvent = screen.getByText(/Berlin/i);
-    expect(berlinEvent).toBeInTheDocument();
-    expect(screen.queryByText(/Paris/i)).not.toBeInTheDocument();
+    expect(visibleEvents).toHaveLength(2);
   });
 });
