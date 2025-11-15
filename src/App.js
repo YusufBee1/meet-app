@@ -1,52 +1,58 @@
 // src/App.js
-import React, { useState, useEffect } from 'react';
-import Event from './components/event';
-import CitySearch from './components/citysearch';
+
+import CitySearch from './components/CitySearch';
+import EventList from './components/EventList';
 import NumberOfEvents from './components/NumberOfEvents';
-import { getEvents, extractLocations } from './api';
+import { useEffect, useState } from 'react';
+import { extractLocations, getEvents } from './api';
+import { InfoAlert, ErrorAlert, WarningAlert } from './components/Alert';
 
-function App() {
-  const [allEvents, setAllEvents] = useState([]);
+import './App.css';
+import CityEventsChart from './components/CityEventsChart';
+import EventGenresChart from './components/EventGenresChart';
+
+
+const App = () => {
+  const [allLocations, setAllLocations] = useState([]);
+  const [currentNOE, setCurrentNOE] = useState(32);
   const [events, setEvents] = useState([]);
-  const [locations, setLocations] = useState([]);
-  const [eventCount, setEventCount] = useState(32);
+  const [currentCity, setCurrentCity] = useState("See all cities");
+  const [infoAlert, setInfoAlert] = useState("");
+  const [errorAlert, setErrorAlert] = useState("");
+  const [warningAlert, setWarningAlert] = useState("");
 
-  // Fetch events once on initial load
   useEffect(() => {
-    const fetchData = async () => {
-      const all = await getEvents();
-      const locations = extractLocations(all);
-      setAllEvents(all);
-      setLocations(locations);
-      setEvents(all.slice(0, eventCount));
-    };
-
+    if (navigator.onLine) {
+      setWarningAlert("");
+    } else {
+      setWarningAlert("You are offline. The displayed event list has been loaded from the cache.");
+    }
     fetchData();
-  }, []);
+  }, [currentCity, currentNOE]);
 
-  // Adjust event list when count or allEvents change
-  useEffect(() => {
-    setEvents(allEvents.slice(0, eventCount));
-  }, [eventCount, allEvents]);
-
-  // Filter by city
-  const filterEventsByCity = (city) => {
-    const filtered =
-      city === 'See all cities'
-        ? allEvents
-        : allEvents.filter((event) => event.location === city);
-
-    setEvents(filtered.slice(0, eventCount));
-  };
+  const fetchData = async () => {
+    const allEvents = await getEvents();
+    const filteredEvents = currentCity === "See all cities" ?
+      allEvents :
+      allEvents.filter(event => event.location === currentCity)
+    setEvents(filteredEvents.slice(0, currentNOE));
+    setAllLocations(extractLocations(allEvents));
+  }
 
   return (
     <div className="App">
-      <h1>Meet App</h1>
-      <CitySearch allLocations={locations} setCurrentCity={filterEventsByCity} />
-      <NumberOfEvents eventCount={eventCount} setEventCount={setEventCount} />
-      {events.map((event) => (
-        <Event key={event.id} event={event} />
-      ))}
+      <div className="alerts-container">
+        {infoAlert.length ? <InfoAlert text={infoAlert} /> : null}
+        {errorAlert.length ? <ErrorAlert text={errorAlert} /> : null}
+        {warningAlert.length ? <WarningAlert text={warningAlert} /> : null}
+      </div>
+      <CitySearch allLocations={allLocations} setCurrentCity={setCurrentCity} setInfoAlert={setInfoAlert} />
+      <NumberOfEvents currentNOE={currentNOE} setCurrentNOE={setCurrentNOE} setErrorAlert={setErrorAlert} />
+      <div className="charts-container">
+        <EventGenresChart events={events} />
+        <CityEventsChart allLocations={allLocations} events={events} />
+      </div>
+      <EventList events={events} />
     </div>
   );
 }

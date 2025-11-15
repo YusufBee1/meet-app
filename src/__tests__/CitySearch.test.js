@@ -10,21 +10,7 @@ describe('<CitySearch /> component', () => {
   });
 
   test('renders a list of suggestions when user types in the textbox', async () => {
-    const allLocations = ['Berlin', 'Munich', 'London'];
-    const setCurrentCity = jest.fn();
-
-    render(<CitySearch allLocations={allLocations} setCurrentCity={setCurrentCity} />);
-
-    const input = screen.getByRole('textbox');
-
-    await userEvent.type(input, 'Ber');
-
-    const suggestion = screen.getByText('Berlin');
-    expect(suggestion).toBeInTheDocument();
-  });
-
-  test('clicking a suggestion sets the city via setCurrentCity()', async () => {
-    const allLocations = ['Berlin', 'Munich', 'London'];
+    const allLocations = ['Berlin, Germany', 'Munich, Germany', 'London, UK'];
     const setCurrentCity = jest.fn();
 
     render(<CitySearch allLocations={allLocations} setCurrentCity={setCurrentCity} />);
@@ -32,10 +18,22 @@ describe('<CitySearch /> component', () => {
     const input = screen.getByRole('textbox');
     await userEvent.type(input, 'Mun');
 
-    const suggestion = screen.getByText('Munich');
+    const suggestion = await screen.findByText('Munich, Germany');
+    expect(suggestion).toBeInTheDocument();
+  });
+
+  test('clicking a suggestion sets the city via setCurrentCity()', async () => {
+    const allLocations = ['Berlin, Germany', 'Munich, Germany', 'London, UK'];
+    const setCurrentCity = jest.fn();
+
+    render(<CitySearch allLocations={allLocations} setCurrentCity={setCurrentCity} />);
+
+    const input = screen.getByRole('textbox');
+    await userEvent.type(input, 'London');
+
+    const suggestion = await screen.findByText('London, UK');
     await userEvent.click(suggestion);
 
-    expect(setCurrentCity).toHaveBeenCalledWith('Munich');
+    expect(setCurrentCity).toHaveBeenCalledWith('London, UK');
   });
 });
-

@@ -15,7 +15,7 @@ const Event = ({ event }) => {
       </button>
 
       {showDetails && (
-        <div className="event-details">
+        <div className="event-details" data-testid="event-details">
           <p>{event.description}</p>
         </div>
       )}
