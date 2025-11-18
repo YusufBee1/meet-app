@@ -1,28 +1,38 @@
-// src/components/CityEventsChart.jsx
 import React, { useEffect, useState } from 'react';
-import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, Tooltip } from 'recharts';
+import {
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
-const CityEventsChart = ({ allEvents }) => {
+const CityEventsChart = ({ allLocations, events }) => {
   const [data, setData] = useState([]);
 
-  useEffect(() => {
-    const getData = () => {
-      const cityCount = {};
-      allEvents.forEach((event) => {
-        const city = event.location.split(', ')[0];
-        cityCount[city] = (cityCount[city] || 0) + 1;
-      });
-      return Object.entries(cityCount).map(([city, count]) => ({ city, count }));
-    };
+  const getData = () => {
+    if (!allLocations || !Array.isArray(allLocations)) return [];
+    if (!events || !Array.isArray(events)) return [];
 
+    return allLocations.map((location) => {
+      const count = events.filter((event) => event.location === location).length;
+      const city = location.split(', ').shift();
+      return { city, count };
+    });
+  };
+
+  useEffect(() => {
     setData(getData());
-  }, [allEvents]);
+  }, [allLocations, events]);
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
+    <ResponsiveContainer height={300} width="99%">
+      <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+        <CartesianGrid />
         <XAxis type="category" dataKey="city" name="City" />
-        <YAxis type="number" dataKey="count" name="Number of Events" allowDecimals={false} />
+        <YAxis type="number" dataKey="count" name="Events" allowDecimals={false} />
         <Tooltip cursor={{ strokeDasharray: '3 3' }} />
         <Scatter data={data} fill="#8884d8" />
       </ScatterChart>

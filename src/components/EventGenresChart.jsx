@@ -1,41 +1,50 @@
-// src/components/EventGenresChart.jsx
-import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { useEffect, useState } from 'react';
-
-const genres = ["React", "JavaScript", "Node", "jQuery", "AngularJS"];
-const colors = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50", "#a4de6c"];
+import React, { useEffect, useState } from 'react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+} from 'recharts';
 
 const EventGenresChart = ({ events }) => {
   const [data, setData] = useState([]);
 
-  useEffect(() => {
-    const data = genres.map((genre) => {
-      const value = events.filter((event) =>
-        event.summary.toLowerCase().includes(genre.toLowerCase())
+  const genres = ['React', 'JavaScript', 'Node', 'jQuery', 'AngularJS'];
+
+  const getData = () => {
+    if (!events || !Array.isArray(events)) return [];
+
+    return genres.map((genre) => {
+      const count = events.filter((event) =>
+        event.summary && event.summary.includes(genre)
       ).length;
-      return { name: genre, value };
+
+      return { name: genre, value: count };
     });
-    setData(data);
+  };
+
+  useEffect(() => {
+    setData(getData());
   }, [events]);
 
+  const COLORS = ['#ff4444', '#ffbb33', '#00C49F', '#0088FE', '#aa66cc'];
+
   return (
-    <ResponsiveContainer width="99%" height={400}>
+    <ResponsiveContainer height={300} width={300}>
       <PieChart>
         <Pie
           data={data}
+          cx={150}
+          cy={150}
+          labelLine={false}
+          outerRadius={80}
+          fill="#8884d8"
           dataKey="value"
-          nameKey="name"
-          cx="50%"
-          cy="50%"
-          outerRadius={120}
-          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
         >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip />
       </PieChart>
     </ResponsiveContainer>
   );

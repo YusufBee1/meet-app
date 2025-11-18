@@ -20,16 +20,6 @@ const App = () => {
   const [errorAlert, setErrorAlert] = useState('');
   const [warningAlert, setWarningAlert] = useState('');
 
-  useEffect(() => {
-    if (navigator.onLine) {
-      setWarningAlert('');
-    } else {
-      setWarningAlert('You are offline. The displayed event list has been loaded from the cache.');
-    }
-
-    fetchEvents();
-  }, [currentCity, currentNOE]);
-
   const fetchEvents = async () => {
     try {
       const all = await getEvents();
@@ -46,6 +36,16 @@ const App = () => {
       setErrorAlert('Failed to load events.');
     }
   };
+
+  useEffect(() => {
+    if (navigator.onLine) {
+      setWarningAlert('');
+    } else {
+      setWarningAlert('You are offline. The displayed event list has been loaded from the cache.');
+    }
+
+    fetchEvents();
+  }, [currentCity, currentNOE]);
 
   return (
     <div className="App">
