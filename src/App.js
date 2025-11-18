@@ -1,60 +1,80 @@
-// src/App.js
-
+import React, { useEffect, useState } from 'react';
 import CitySearch from './components/CitySearch';
 import EventList from './components/EventList';
 import NumberOfEvents from './components/NumberOfEvents';
-import { useEffect, useState } from 'react';
-import { extractLocations, getEvents } from './api';
-import { InfoAlert, ErrorAlert, WarningAlert } from './components/Alert';
-
-import './App.css';
-import CityEventsChart from './components/CityEventsChart';
+import { getEvents, extractLocations } from './api';
+import InfoAlert from './components/InfoAlert';
+import ErrorAlert from './components/ErrorAlert';
+import WarningAlert from './components/WarningAlert';
 import EventGenresChart from './components/EventGenresChart';
-
+import CityEventsChart from './components/CityEventsChart';
+import './App.css';
 
 const App = () => {
-  const [allLocations, setAllLocations] = useState([]);
-  const [currentNOE, setCurrentNOE] = useState(32);
   const [events, setEvents] = useState([]);
-  const [currentCity, setCurrentCity] = useState("See all cities");
-  const [infoAlert, setInfoAlert] = useState("");
-  const [errorAlert, setErrorAlert] = useState("");
-  const [warningAlert, setWarningAlert] = useState("");
+  const [allLocations, setAllLocations] = useState([]);
+  const [currentCity, setCurrentCity] = useState('See all cities');
+  const [currentNOE, setCurrentNOE] = useState(32);
+
+  const [infoAlert, setInfoAlert] = useState('');
+  const [errorAlert, setErrorAlert] = useState('');
+  const [warningAlert, setWarningAlert] = useState('');
 
   useEffect(() => {
     if (navigator.onLine) {
-      setWarningAlert("");
+      setWarningAlert('');
     } else {
-      setWarningAlert("You are offline. The displayed event list has been loaded from the cache.");
+      setWarningAlert('You are offline. The displayed event list has been loaded from the cache.');
     }
-    fetchData();
+
+    fetchEvents();
   }, [currentCity, currentNOE]);
 
-  const fetchData = async () => {
-    const allEvents = await getEvents();
-    const filteredEvents = currentCity === "See all cities" ?
-      allEvents :
-      allEvents.filter(event => event.location === currentCity)
-    setEvents(filteredEvents.slice(0, currentNOE));
-    setAllLocations(extractLocations(allEvents));
-  }
+  const fetchEvents = async () => {
+    try {
+      const all = await getEvents();
+      const locations = extractLocations(all);
+      setAllLocations(locations);
+
+      const filtered =
+        currentCity === 'See all cities'
+          ? all
+          : all.filter((event) => event.location === currentCity);
+
+      setEvents(filtered.slice(0, currentNOE));
+    } catch (error) {
+      setErrorAlert('Failed to load events.');
+    }
+  };
 
   return (
     <div className="App">
       <div className="alerts-container">
-        {infoAlert.length ? <InfoAlert text={infoAlert} /> : null}
-        {errorAlert.length ? <ErrorAlert text={errorAlert} /> : null}
-        {warningAlert.length ? <WarningAlert text={warningAlert} /> : null}
+        {infoAlert && <InfoAlert text={infoAlert} />}
+        {errorAlert && <ErrorAlert text={errorAlert} />}
+        {warningAlert && <WarningAlert text={warningAlert} />}
       </div>
-      <CitySearch allLocations={allLocations} setCurrentCity={setCurrentCity} setInfoAlert={setInfoAlert} />
-      <NumberOfEvents currentNOE={currentNOE} setCurrentNOE={setCurrentNOE} setErrorAlert={setErrorAlert} />
+
+      <CitySearch
+        allLocations={allLocations}
+        setCurrentCity={setCurrentCity}
+        setInfoAlert={setInfoAlert}
+      />
+
+      <NumberOfEvents
+        currentNOE={currentNOE}
+        setCurrentNOE={setCurrentNOE}
+        setErrorAlert={setErrorAlert}
+      />
+
       <div className="charts-container">
         <EventGenresChart events={events} />
         <CityEventsChart allLocations={allLocations} events={events} />
       </div>
+
       <EventList events={events} />
     </div>
   );
-}
+};
 
 export default App;
