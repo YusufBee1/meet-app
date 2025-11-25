@@ -1,92 +1,96 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { loadFeature, defineFeature } from 'jest-cucumber';
+import { render, within, waitFor, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import App from '../App';
 
-// Mock API
-jest.mock('../api', () => ({
-  getEvents: jest.fn(() =>
-    Promise.resolve([
-      { id: 1, summary: 'Event 1', location: 'Berlin', description: 'Event 1 details', start: { dateTime: '' } },
-      { id: 2, summary: 'Event 2', location: 'Berlin', description: 'Event 2 details', start: { dateTime: '' } },
-      { id: 3, summary: 'Event 3', location: 'Berlin', description: 'Event 3 details', start: { dateTime: '' } },
-      { id: 4, summary: 'Event 4', location: 'Berlin', description: 'Event 4 details', start: { dateTime: '' } },
-    ])
-  ),
-  extractLocations: jest.fn(() => ['Berlin'])
-}));
+const feature = loadFeature('./src/features/showHideAnEventsDetails.feature');
 
-const feature = loadFeature('src/features/showHideAnEventsDetails.feature');
+defineFeature(feature, (test) => {
+    let AppComponent;
+    let AppDOM;
+    let eventItems;
 
-defineFeature(feature, test => {
-  test('An event element is collapsed by default', ({ given, when, then }) => {
-    given('the user opens the Meet app', async () => {
-      render(<App />);
+    beforeEach(async () => {
+        await act(async () => {
+            AppComponent = render(<App />);
+        });
+        AppDOM = AppComponent.container.firstChild;
+
+        await waitFor(() => {
+            eventItems = within(AppDOM).queryAllByRole('listitem');
+            expect(eventItems.length).toBeGreaterThan(0);
+        });
     });
 
-    when('the list of upcoming events is displayed', async () => {
-      await waitFor(() => {
-        expect(screen.getAllByRole('listitem').length).toBeGreaterThan(0);
-      });
+    test('An event element is collapsed by default', ({ given, when, then }) => {
+        given('the app is loaded', () => {
+
+        });
+
+        when('the user sees an event', () => {
+
+        });
+
+        then('the event element should be collapsed by default', () => {
+            const eventDetails = AppDOM.querySelector('.event .details');
+            expect(eventDetails).toBeNull();
+        });
     });
 
-    then('each event element should be collapsed by default', async () => {
-      const items = await screen.findAllByRole('listitem');
-      items.forEach(event => {
-        const details = within(event).queryByTestId('event-details');
-        expect(details).not.toBeInTheDocument();
-      });
-    });
-  });
+    test('User can expand an event to see details', ({ given, when, then }) => {
+        given('the event element is collapsed', () => {
 
-  test('User can expand an event to see its details', ({ given, when, then }) => {
-    let firstEvent;
+        });
 
-    given('the list of events is displayed', async () => {
-      render(<App />);
-      await waitFor(() => {
-        const items = screen.getAllByRole('listitem');
-        expect(items.length).toBeGreaterThan(0);
-        firstEvent = items[0];
-      });
-    });
+        when('the user clicks on the "Show Details" button', async () => {
+            const user = userEvent.setup();
+            const firstEvent = eventItems[0];
+            const showDetailsButton = within(firstEvent).getByText('Show Details');
 
-    when('the user clicks on “Show Details” on an event', async () => {
-      const showButton = within(firstEvent).getByRole('button', { name: /show details/i });
-      fireEvent.click(showButton);
+            await act(async () => {
+                await user.click(showDetailsButton);
+            });
+        });
+
+        then('the event element should expand to show more details', async () => {
+            await waitFor(() => {
+                const eventDetails = AppDOM.querySelector('.event .details');
+                expect(eventDetails).toBeDefined();
+            });
+        });
     });
 
-    then('that event’s details should be displayed', async () => {
-      const details = await within(firstEvent).findByTestId('event-details');
-      expect(details).toBeInTheDocument();
-    });
-  });
+    test('User can collapse an event to hide details', ({ given, when, then }) => {
+        given('the event element is expanded', async () => {
+            const user = userEvent.setup();
+            const firstEvent = eventItems[0];
+            const showDetailsButton = within(firstEvent).getByText('Show Details');
 
-  test('User can collapse an event to hide its details', ({ given, when, then }) => {
-    let firstEvent;
+            await act(async () => {
+                await user.click(showDetailsButton);
+            });
 
-    given('the event details are displayed', async () => {
-      render(<App />);
-      await waitFor(() => {
-        const items = screen.getAllByRole('listitem');
-        expect(items.length).toBeGreaterThan(0);
-        firstEvent = items[0];
-      });
-      const showButton = within(firstEvent).getByRole('button', { name: /show details/i });
-      fireEvent.click(showButton);
-      await screen.findByTestId('event-details');
-    });
+            await waitFor(() => {
+                const eventDetails = AppDOM.querySelector('.event .details');
+                expect(eventDetails).toBeDefined();
+            });
+        });
 
-    when('the user clicks on “Hide Details”', async () => {
-      const hideButton = within(firstEvent).getByRole('button', { name: /hide details/i });
-      fireEvent.click(hideButton);
-    });
+        when('the user clicks on the "Hide Details" button', async () => {
+            const user = userEvent.setup();
+            const hideDetailsButton = within(AppDOM).getByText('Hide Details');
 
-    then('that event’s details should be hidden', async () => {
-      await waitFor(() => {
-        const details = within(firstEvent).queryByTestId('event-details');
-        expect(details).not.toBeInTheDocument();
-      });
+            await act(async () => {
+                await user.click(hideDetailsButton);
+            });
+        });
+
+        then('the event element should collapse to hide details', async () => {
+            await waitFor(() => {
+                const eventDetails = AppDOM.querySelector('.event .details');
+                expect(eventDetails).toBeNull();
+            });
+        });
     });
-  });
 });

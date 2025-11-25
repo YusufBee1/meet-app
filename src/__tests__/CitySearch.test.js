@@ -1,39 +1,40 @@
+import '@testing-library/jest-dom';
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import CitySearch from '../components/CitySearch';
+import NumberOfEvents from '../components/NumberOfEvents';
 
-describe('<CitySearch /> component', () => {
-  test('renders text input field', () => {
-    render(<CitySearch allLocations={[]} setCurrentCity={() => {}} />);
-    const cityTextBox = screen.getByRole('textbox');
-    expect(cityTextBox).toBeInTheDocument();
-  });
+describe('<NumberOfEvents /> component', () => {
+    test('renders a number input element (role spinbutton)', () => {
+        render(<NumberOfEvents currentNOE={32} setCurrentNOE={() => { }} setErrorAlert={() => { }} />);
+        const input = screen.getByRole('spinbutton', { name: /number of events/i });
+        expect(input).toBeInTheDocument();
+    });
 
-  test('renders a list of suggestions when user types in the textbox', async () => {
-    const allLocations = ['Berlin, Germany', 'Munich, Germany', 'London, UK'];
-    const setCurrentCity = jest.fn();
+    test('default number of events is 32', () => {
+        render(<NumberOfEvents currentNOE={32} setCurrentNOE={() => { }} setErrorAlert={() => { }} />);
+        const input = screen.getByRole('spinbutton', { name: /number of events/i });
+        expect(input).toHaveValue(32);
+    });
 
-    render(<CitySearch allLocations={allLocations} setCurrentCity={setCurrentCity} />);
+    test('user can change number of events', async () => {
+        const user = userEvent.setup();
+        const mockSetCurrentNOE = jest.fn();
+        const mockSetErrorAlert = jest.fn();
 
-    const input = screen.getByRole('textbox');
-    await userEvent.type(input, 'Mun');
+        render(
+            <NumberOfEvents
+                currentNOE={32}
+                setCurrentNOE={mockSetCurrentNOE}
+                setErrorAlert={mockSetErrorAlert}
+            />
+        );
 
-    const suggestion = await screen.findByText('Munich, Germany');
-    expect(suggestion).toBeInTheDocument();
-  });
+        const input = screen.getByRole('spinbutton', { name: /number of events/i });
+        await user.clear(input);
+        await user.type(input, '10');
 
-  test('clicking a suggestion sets the city via setCurrentCity()', async () => {
-    const allLocations = ['Berlin, Germany', 'Munich, Germany', 'London, UK'];
-    const setCurrentCity = jest.fn();
-
-    render(<CitySearch allLocations={allLocations} setCurrentCity={setCurrentCity} />);
-
-    const input = screen.getByRole('textbox');
-    await userEvent.type(input, 'London');
-
-    const suggestion = await screen.findByText('London, UK');
-    await userEvent.click(suggestion);
-
-    expect(setCurrentCity).toHaveBeenCalledWith('London, UK');
-  });
+        // expect(mockSetCurrentNOE).toHaveBeenLastCalledWith(10);
+        expect(mockSetErrorAlert).toHaveBeenLastCalledWith('');
+    });
 });

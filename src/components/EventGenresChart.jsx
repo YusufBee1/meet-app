@@ -1,53 +1,87 @@
 import React, { useEffect, useState } from 'react';
 import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
 } from 'recharts';
 
 const EventGenresChart = ({ events }) => {
-  const [data, setData] = useState([]);
+    const [data, setData] = useState([]);
+    const [outerRadius, setOuterRadius] = useState(getResponsiveRadius());
 
-  const genres = ['React', 'JavaScript', 'Node', 'jQuery', 'AngularJS'];
+    const genres = ['React', 'JavaScript', 'Node', 'jQuery', 'Angular'];
 
-  const getData = () => {
-    if (!events || !Array.isArray(events)) return [];
+    function getResponsiveRadius() {
+        const width = window.innerWidth;
+        if (width <= 360) return 50;
+        if (width <= 375) return 50;
+        if (width <= 400) return 80;
+        if (width <= 420) return 90;
+        return 130;
+    }
 
-    return genres.map((genre) => {
-      const count = events.filter((event) =>
-        event.summary && event.summary.includes(genre)
-      ).length;
+    useEffect(() => {
+        const getData = () => {
+            return genres.map((genre) => {
+                const filteredEvents = events.filter(
+                    (event) => event.summary && event.summary.includes(genre)
+                );
+                return { name: genre, value: filteredEvents.length };
+            });
+        };
+        setData(getData());
+    }, [events]);
 
-      return { name: genre, value: count };
-    });
-  };
+    useEffect(() => {
+        const handleResize = () => setOuterRadius(getResponsiveRadius());
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
-  useEffect(() => {
-    setData(getData());
-  }, [events]);
+    const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index }) => {
+        const RADIAN = Math.PI / 180;
+        const radius = outerRadius;
+        const x = cx + radius * Math.cos(-midAngle * RADIAN) * 1.1;
+        const y = cy + radius * Math.sin(-midAngle * RADIAN) * 1.1;
 
-  const COLORS = ['#ff4444', '#ffbb33', '#00C49F', '#0088FE', '#aa66cc'];
+        return percent > 0 ? (
+            <text
+                x={x}
+                y={y}
+                fill="#8884d8"
+                textAnchor={x > cx ? 'start' : 'end'}
+                dominantBaseline="central"
+                fontSize={11}
+            >
+                {`${genres[index]} ${(percent * 100).toFixed(0)}%`}
+            </text>
+        ) : null;
+    };
 
-  return (
-    <ResponsiveContainer height={300} width={300}>
-      <PieChart>
-        <Pie
-          data={data}
-          cx={150}
-          cy={150}
-          labelLine={false}
-          outerRadius={80}
-          fill="#8884d8"
-          dataKey="value"
-        >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-      </PieChart>
-    </ResponsiveContainer>
-  );
+    return (
+        <div className="genre-chart-wrapper">
+            <ResponsiveContainer width="99%" height={400}>
+                <PieChart>
+                    <Pie
+                        data={data}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={outerRadius}
+                        fill="#8884d8"
+                        labelLine={false}
+                        label={renderCustomizedLabel}
+                    >
+                        {data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} />
+                        ))}
+                    </Pie>
+                </PieChart>
+            </ResponsiveContainer>
+        </div>
+    );
 };
 
 export default EventGenresChart;

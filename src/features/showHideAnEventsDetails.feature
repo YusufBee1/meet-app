@@ -1,16 +1,16 @@
 Feature: Show/Hide Event Details
 
-  Scenario: An event element is collapsed by default
-    Given the user opens the Meet app
-    When the list of upcoming events is displayed
-    Then each event element should be collapsed by default
+    Scenario: An event element is collapsed by default
+        Given the app is loaded
+        When the user sees an event
+        Then the event element should be collapsed by default
 
-  Scenario: User can expand an event to see its details
-    Given the list of events is displayed
-    When the user clicks on “Show Details” on an event
-    Then that event’s details should be displayed
+    Scenario: User can expand an event to see details
+        Given the event element is collapsed
+        When the user clicks on the "Show Details" button
+        Then the event element should expand to show more details
 
-  Scenario: User can collapse an event to hide its details
-    Given the event details are displayed
-    When the user clicks on “Hide Details”
-    Then that event’s details should be hidden
+    Scenario: User can collapse an event to hide details
+        Given the event element is expanded
+        When the user clicks on the "Hide Details" button
+        Then the event element should collapse to hide details

@@ -1,101 +1,89 @@
-// src/api.js
+import { mockData } from './mock-data';
 
-// === BASE URL (Local or Deployed Lambda) ===
-const API_BASE_URL =
-  process.env.NODE_ENV === 'production'
-    ? 'https://YOUR_AWS_LAMBDA_DEPLOYMENT_URL' // replace when deploying
-    : 'http://localhost:3005';
 
-// === TOKEN HANDLERS ===
 export const getAccessToken = async () => {
-  const accessToken = localStorage.getItem('access_token');
-  const tokenValid = accessToken && (await checkToken(accessToken));
+    const accessToken = localStorage.getItem('access_token');
+    const tokenCheck = accessToken && (await checkToken(accessToken));
 
-  if (tokenValid) return accessToken;
+    if (!accessToken || tokenCheck.error) {
+        await localStorage.removeItem("access_token");
+        const searchParams = new URLSearchParams(window.location.search);
+        const code = await searchParams.get("code");
 
-  localStorage.removeItem('access_token');
-  const searchParams = new URLSearchParams(window.location.search);
-  const code = searchParams.get('code');
+        if (!code) {
+            const response = await fetch("https://bhp1laje7g.execute-api.eu-central-1.amazonaws.com/dev/api/get-auth-url");
+            const result = await response.json();
+            const { authUrl } = result;
+            return (window.location.href = authUrl);
+        }
 
-  // Step 1: Request Auth URL
-  if (!code) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/get-auth-url`);
-      const { authUrl } = await response.json();
-      window.location.href = authUrl;
-      return null;
-    } catch (err) {
-      console.error('Error fetching auth URL:', err);
-      return null;
+        return code && getToken(code);
     }
-  }
 
-  // Step 2: Exchange Code for Token
-  try {
-    const tokenResponse = await fetch(`${API_BASE_URL}/token/${code}`);
-    const { access_token } = await tokenResponse.json();
-    localStorage.setItem('access_token', access_token);
-    return access_token;
-  } catch (err) {
-    console.error('Error fetching access token:', err);
-    return null;
-  }
+    return accessToken;
 };
 
-// === CHECK TOKEN VALIDITY ===
-export const checkToken = async (accessToken) => {
-  try {
-    const res = await fetch(
-      `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${accessToken}`
-    );
-    const result = await res.json();
-    return !result.error;
-  } catch (err) {
-    console.error('Error checking token validity:', err);
-    return false;
-  }
-};
 
-// === FETCH EVENTS ===
-export const getEvents = async () => {
-  // Offline fallback
-  if (!navigator.onLine) {
-    const cached = localStorage.getItem('lastEvents');
-    return cached ? JSON.parse(cached) : [];
-  }
-
-  // Retrieve access token
-  const token = await getAccessToken();
-  if (!token) return [];
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/get-events/${token}`);
+const checkToken = async (accessToken) => {
+    const response = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${accessToken}`);
     const result = await response.json();
+    return result;
+};
 
-    if (result && result.events) {
-      localStorage.setItem('lastEvents', JSON.stringify(result.events));
-      return result.events;
+// Get events with offline fallback using localStorage
+export const getEvents = async () => {
+    // If local dev environment, use mock data only
+    if (window.location.href.startsWith('http://localhost')) {
+        return mockData;
     }
 
-    return [];
-  } catch (error) {
-    console.error('Error fetching events:', error);
-    return [];
-  }
+
+    if (!navigator.onLine) {
+        const events = localStorage.getItem("lastEvents");
+        console.log("Offline mode: Loading events from localStorage.");
+        return events ? JSON.parse(events) : [];
+    }
+
+
+    const token = await getAccessToken();
+
+    if (token) {
+        removeQuery();
+        const url = `https://bhp1laje7g.execute-api.eu-central-1.amazonaws.com/dev/api/get-events/${token}`;
+        const response = await fetch(url);
+        const result = await response.json();
+        if (result) {
+
+            localStorage.setItem("lastEvents", JSON.stringify(result.events));
+            return result.events;
+        } else return null;
+    }
 };
 
-// === LOCATION UTILITY ===
+
+const removeQuery = () => {
+    let newurl;
+    if (window.history.pushState && window.location.pathname) {
+        newurl = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
+        window.history.pushState("", "", newurl);
+    } else {
+        newurl = `${window.location.protocol}//${window.location.host}`;
+        window.history.pushState("", "", newurl);
+    }
+};
+
+
+const getToken = async (code) => {
+    const encodeCode = encodeURIComponent(code);
+    const response = await fetch(`https://bhp1laje7g.execute-api.eu-central-1.amazonaws.com/dev/api/token/${encodeCode}`);
+    const { access_token } = await response.json();
+    if (access_token) localStorage.setItem("access_token", access_token);
+    return access_token;
+};
+
+
 export const extractLocations = (events) => {
-  if (!Array.isArray(events)) return [];
-  const locations = events.map((event) => event.location);
-  return [...new Set(locations)];
-};
-
-// === SIMPLE STUB FOR TEST COVERAGE ===
-// (This allows Jest tests to import getEvents and extractLocations safely)
-export default {
-  getAccessToken,
-  checkToken,
-  getEvents,
-  extractLocations,
+    const locations = events.map(event => event.location);
+    const uniqueLocations = [...new Set(locations)];
+    return uniqueLocations;
 };

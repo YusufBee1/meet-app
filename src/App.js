@@ -3,54 +3,65 @@ import CitySearch from './components/CitySearch';
 import EventList from './components/EventList';
 import NumberOfEvents from './components/NumberOfEvents';
 import { getEvents, extractLocations } from './api';
-import { InfoAlert, ErrorAlert, WarningAlert } from './components/Alert';
-import EventGenresChart from './components/EventGenresChart';
-import CityEventsChart from './components/CityEventsChart';
 import './App.css';
+import { InfoAlert, ErrorAlert, WarningAlert } from './components/Alert';
+import CityEventsChart from './components/CityEventsChart';
+import EventGenresChart from './components/EventGenresChart';
 
 const App = () => {
   const [events, setEvents] = useState([]);
+  const [currentNOE, setCurrentNOE] = useState(32);
   const [allLocations, setAllLocations] = useState([]);
   const [currentCity, setCurrentCity] = useState('See all cities');
-  const [currentNOE, setCurrentNOE] = useState(32);
-
   const [infoAlert, setInfoAlert] = useState('');
   const [errorAlert, setErrorAlert] = useState('');
-  const [warningAlert, setWarningAlert] = useState('');
-
-  const fetchEvents = async () => {
-    try {
-      const all = await getEvents();
-      const locations = extractLocations(all);
-      setAllLocations(locations);
-
-      const filtered =
-        currentCity === 'See all cities'
-          ? all
-          : all.filter((event) => event.location === currentCity);
-
-      setEvents(filtered.slice(0, currentNOE));
-    } catch (error) {
-      setErrorAlert('Failed to load events.');
-    }
-  };
+  const [warningText, setWarningText] = useState('');
 
   useEffect(() => {
-    if (navigator.onLine) {
-      setWarningAlert('');
-    } else {
-      setWarningAlert('You are offline. The displayed event list has been loaded from the cache.');
-    }
+    const fetchData = async () => {
+      if (navigator.onLine) {
+        setWarningText("");
 
-    fetchEvents();
+        const allEvents = await getEvents();
+
+
+        localStorage.setItem('lastEvents', JSON.stringify(allEvents));
+
+        const filteredEvents =
+          currentCity === 'See all cities'
+            ? allEvents
+            : allEvents.filter((event) => event.location === currentCity);
+
+        setEvents(filteredEvents.slice(0, currentNOE));
+        setAllLocations(extractLocations(allEvents));
+      } else {
+        setWarningText("You are currently offline. Displayed events may not be up to date.");
+
+
+        const savedEvents = localStorage.getItem('lastEvents');
+        if (savedEvents) {
+          const parsedEvents = JSON.parse(savedEvents);
+
+          const filteredEvents =
+            currentCity === 'See all cities'
+              ? parsedEvents
+              : parsedEvents.filter((event) => event.location === currentCity);
+
+          setEvents(filteredEvents.slice(0, currentNOE));
+          setAllLocations(extractLocations(parsedEvents));
+        }
+      }
+    };
+
+    fetchData();
   }, [currentCity, currentNOE]);
 
   return (
     <div className="App">
       <div className="alerts-container">
-        {infoAlert && <InfoAlert text={infoAlert} />}
-        {errorAlert && <ErrorAlert text={errorAlert} />}
-        {warningAlert && <WarningAlert text={warningAlert} />}
+        {infoAlert.length > 0 && <InfoAlert text={infoAlert} />}
+        {errorAlert.length > 0 && <ErrorAlert text={errorAlert} />}
+        {warningText.length > 0 && <WarningAlert text={warningText} />}
       </div>
 
       <CitySearch
@@ -66,8 +77,8 @@ const App = () => {
       />
 
       <div className="charts-container">
-        <EventGenresChart events={events} />
         <CityEventsChart allLocations={allLocations} events={events} />
+        <EventGenresChart events={events} />
       </div>
 
       <EventList events={events} />

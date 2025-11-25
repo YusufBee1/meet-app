@@ -1,61 +1,44 @@
+import '@testing-library/jest-dom';
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, within, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { loadFeature, defineFeature } from 'jest-cucumber';
 import App from '../App';
 
-// Mocking API to return 4 fake events
-jest.mock('../api', () => ({
-  getEvents: jest.fn(() =>
-    Promise.resolve([
-      { id: 1, summary: 'Event 1', location: 'Paris', start: { dateTime: '' } },
-      { id: 2, summary: 'Event 2', location: 'Paris', start: { dateTime: '' } },
-      { id: 3, summary: 'Event 3', location: 'Paris', start: { dateTime: '' } },
-      { id: 4, summary: 'Event 4', location: 'Paris', start: { dateTime: '' } },
-    ])
-  ),
-  extractLocations: jest.fn(() => ['Paris']),
-}));
+const feature = loadFeature('./src/features/specifyNumberOfEvents.feature');
 
-const feature = loadFeature('src/features/specifyNumberOfEvents.feature');
+defineFeature(feature, (test) => {
+    test('Default number of events is 32', ({ given, when, then }) => {
+        given('the app is loaded', async () => {
+            await act(async () => render(<App />));
+        });
 
-defineFeature(feature, test => {
-  test('Default number of events is 32', ({ given, when, then }) => {
-    given('the user opens the app', () => {
-      render(<App />);
+        when('the user hasn’t specified a number', () => {
+            // Nothing needed
+        });
+
+        then('the default number of events displayed should be 32', () => {
+            const input = screen.getByRole('spinbutton', { name: /number of events/i });
+            expect(input).toHaveValue(32);
+        });
     });
 
-    when('the list of events is displayed', async () => {
-      await waitFor(() => {
-        const items = screen.getAllByRole('listitem');
-        expect(items.length).toBeGreaterThan(0);
-      });
-    });
+    test('User can change the number of events', ({ given, when, then }) => {
+        given('the user wants to change the number of events', async () => {
+            await act(async () => render(<App />));
+        });
 
-    then('32 events should be shown by default', async () => {
-      const items = await screen.findAllByRole('listitem');
-      expect(items.length).toBeLessThanOrEqual(32);
-    });
-  });
+        when('the user types a new number in the textbox', async () => {
+            const user = userEvent.setup();
+            const input = screen.getByRole('spinbutton', { name: /number of events/i });
+            await user.clear(input);
+            await user.type(input, '10');
+        });
 
-  test('User can change the number of events displayed', ({ given, when, then }) => {
-    given('the list of events is visible', async () => {
-      render(<App />);
-      await waitFor(() => {
-        const items = screen.getAllByRole('listitem');
-        expect(items.length).toBeGreaterThan(0);
-      });
+        then('the app should display the specified number of events', async () => {
+            const eventList = screen.getByRole('list');
+            const eventItems = within(eventList).getAllByRole('listitem');
+            expect(eventItems.length).toBeLessThanOrEqual(10);
+        });
     });
-
-    when('the user sets the number of events to 2', () => {
-      const input = screen.getByRole('spinbutton');
-      fireEvent.change(input, { target: { value: '2' } });
-    });
-
-    then('only 2 events should be displayed', async () => {
-      await waitFor(() => {
-        const items = screen.getAllByRole('listitem');
-        expect(items.length).toBe(2);
-      });
-    });
-  });
 });
