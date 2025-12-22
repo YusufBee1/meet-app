@@ -7,19 +7,19 @@ import {
 const CityEventsChart = ({ allLocations, events }) => {
     const [data, setData] = useState([]);
 
-    // Populate chart data when events change
     useEffect(() => {
         setData(getData());
-    }, [`${events}`]); // stringify dependency so it triggers on changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [events]); // FIXED: Using direct object comparison instead of string coercion
 
     const getData = () => {
-        return allLocations.map((location) => {
+        const data = allLocations.map((location) => {
             const count = events.filter((event) => event.location === location).length;
-            const city = location.split(/, | - /)[0]; // Handles "Berlin, Germany" or "Dubai - UAE"
+            const city = location.split(/, | - /)[0];
             return { city, count };
         });
+        return data;
     };
-
 
     return (
         <ResponsiveContainer height={400}>
@@ -31,7 +31,6 @@ const CityEventsChart = ({ allLocations, events }) => {
                     left: -30,
                 }}
             >
-
                 <CartesianGrid />
                 <XAxis
                     type="category"
